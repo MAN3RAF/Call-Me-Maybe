@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field, ValidationError
 from typing import Optional, Dict, List
 import json
 from pathlib import Path
+import sys
 
 
 class PromptValidator(BaseModel):
@@ -16,43 +17,43 @@ class FunctionValidator(BaseModel):
 
 
 
-def prompt_validate():
+def prompt_validate(location):
 
 	try:
-		with open("data/input/function_calling_tests.json", "r") as pr:
+		with open(location, "r") as pr:
 			prompts = json.load(pr)
 			for p in prompts:
-				p_v = PromptValidator(prompt=p)
-				print(p_v)
-
-
+				try:
+					p_v = PromptValidator(prompt=p)
+					print("Good")
+				except ValidationError:
+					print("VAlidation Error!")
+				except Exception:
+					print("Bad")
 
 	except FileNotFoundError:
 		print("ERROR: No json file was found!")
-	except ValidationError:
-		print("Validation Error!")
 	except Exception:
 		print("ERROR: wrong json format!")
-	# print(prompts)
 
 
-def func_validate():
+def func_validate(location):
+
 
 	try:
-		with open("data/input/functions_definition.json", "r") as fun:
-			
+		with open(location, "r") as fun:
+
 			funcs = json.load(fun)
 			for f in funcs:
-				f_v = FunctionValidator(name=f['name'], description=f['description'], parameters=f['parameters'], returns=f['returns'])
-				print(f_v)
-
+				try:
+					f_v = FunctionValidator(name=f['name'], description=f['description'], parameters=f['parameters'], returns=f['returns'])
+					print("Good")
+				except ValidationError:
+					print("VAlidation Error!")
+				except Exception:
+					print("Bad")
 
 	except FileNotFoundError:
-		print("ERROR: No json file was found!")
-	except ValidationError:
-		print("Validation Error!")
+		print("bad")
 	except Exception:
-		print("ERROR: wrong json format!")
-	# print(prompts)
-
-prompt_validate()
+		print("bad ")
