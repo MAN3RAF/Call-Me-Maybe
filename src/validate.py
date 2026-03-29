@@ -18,16 +18,16 @@ class PromptValidator(BaseModel):
     prompt: str
 
 
-def parse(location: str):
+def parse(location: str) -> List | None:
     try:
-        with open(location, "r") as f:
+        with open(location, "r", encoding='utf-8') as f:
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError) as e:
         print(f"ERROR: {e}")
         return None
 
 
-def func_validate(location):
+def func_validate(location: str):
     data = parse(location)
     if data is None: return []
     
@@ -42,7 +42,7 @@ def func_validate(location):
     return valid_funcs
 
 
-def prompt_validate(location):
+def prompt_validate(location: str):
     data = parse(location)
     if data is None: return []
     
