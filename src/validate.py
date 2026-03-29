@@ -1,59 +1,56 @@
-from pydantic import BaseModel, Field, ValidationError
-from typing import Optional, Dict, List
+from pydantic import BaseModel, ValidationError
+from typing import Dict, List, Optional
 import json
-from pathlib import Path
-import sys
 
 
-class PromptValidator(BaseModel):
-	prompt: Dict[str, str]
+class ParameterInfo(BaseModel):
+    type: str
 
 
 class FunctionValidator(BaseModel):
-	name: str
-	description: str
-	parameters: Dict[str, Dict[str, str]]
-	returns: Dict[str, str]
+    name: str
+    description: str
+    parameters: Dict[str, ParameterInfo]
+    returns: Dict[str, str]
 
 
+class PromptValidator(BaseModel):
+    prompt: str
 
-def prompt_validate(location):
 
-	try:
-		with open(location, "r") as pr:
-			prompts = json.load(pr)
-			for p in prompts:
-				try:
-					p_v = PromptValidator(prompt=p)
-					print("Good")
-				except ValidationError:
-					print("VAlidation Error!")
-				except Exception:
-					print("Bad")
-
-	except FileNotFoundError:
-		print("ERROR: No json file was found!")
-	except Exception:
-		print("ERROR: wrong json format!")
+def parse(location: str):
+    try:
+        with open(location, "r") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        print(f"ERROR: {e}")
+        return None
 
 
 def func_validate(location):
+    data = parse(location)
+    if data is None: return []
+    
+    valid_funcs = []
+    for f in data:
+        try:
+            # Using **f automatically maps dict keys to class attributes
+            f_v = FunctionValidator(**f)
+            valid_funcs.append(f_v)
+        except (ValidationError, TypeError) as e:
+            print(f"ERROR: Skipping invalid function entry.")
+    return valid_funcs
 
 
-	try:
-		with open(location, "r") as fun:
-
-			funcs = json.load(fun)
-			for f in funcs:
-				try:
-					f_v = FunctionValidator(name=f['name'], description=f['description'], parameters=f['parameters'], returns=f['returns'])
-					print("Good")
-				except ValidationError:
-					print("VAlidation Error!")
-				except Exception:
-					print("Bad")
-
-	except FileNotFoundError:
-		print("bad")
-	except Exception:
-		print("bad ")
+def prompt_validate(location):
+    data = parse(location)
+    if data is None: return []
+    
+    valid_prompts = []
+    for p in data:
+        try:
+            p_v = PromptValidator(**p)
+            valid_prompts.append(p_v)
+        except (ValidationError, TypeError):
+            print("ERROR: Skipping invalid prompt entry.")
+    return valid_prompts
