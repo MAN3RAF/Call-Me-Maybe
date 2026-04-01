@@ -30,7 +30,7 @@ def main():
 		logits = model.get_logits_from_input_ids(ids.tolist()[0])
 
 		# print(get_next_token(logits, allowed_ids))
-		print(model.decode(logits.index(max(logits))))
+		# print(model.decode(logits.index(max(logits))))
 
 		prompt += model.decode(logits.index(max(logits)))
 		i -= 1
@@ -38,3 +38,7 @@ def main():
 
 
 main()
+
+
+
+
