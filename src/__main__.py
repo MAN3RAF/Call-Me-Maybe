@@ -22,6 +22,8 @@ def main() -> None:
     func_list = validate.func_validate(args.functions_definition)
     prompt_list = validate.prompt_validate(args.input)
 
+    
+
 
 
 if __name__ == "__main__":
