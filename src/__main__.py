@@ -1,5 +1,6 @@
 import argparse
 import src.validate as validate
+from src.func_utils import get_func_parameters
 
 def main() -> None:
 
@@ -22,8 +23,9 @@ def main() -> None:
     func_list = validate.func_validate(args.functions_definition)
     prompt_list = validate.prompt_validate(args.input)
 
-    
+    g = get_func_parameters("fn_substitute_string_with_regex", func_list)
 
+    print(g)
 
 
 if __name__ == "__main__":
