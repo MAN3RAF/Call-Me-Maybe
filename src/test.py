@@ -32,32 +32,6 @@ def generate_text(llm: Small_LLM_Model, prompt: str, max_tokens: int = 50) -> st
     return llm.decode(input_ids_list)
 
 
-def test1(model: Small_LLM_Model, prompt: str):
-
-	ids = model.encode(prompt).tolist()[0]
-
-	run = 1
-
-	while True:
-		
-		logits = model.get_logits_from_input_ids(ids)
-
-		if 1 in run:
-			wanted_ids = get_next_token(logits, [8822])
-
-		elif 2 in run:
-			wanted_ids = get_next_token(logits, [])
-
-
-		# res = logits.index(max(logits))
-
-		# print(res)
-
-		ids.append(wanted_ids)
-
-		print(model.decode(ids))
-
-
 def main():
 	model = Small_LLM_Model()
 
@@ -85,29 +59,43 @@ def main():
 
 	test(model, f'{{\n  "prompt": "{prompt}",\n  "name": "')
 
+def get_number_token_ids(model: Small_LLM_Model ,type: str) -> List[int]:
 
-def test(model, prompt: str, allowed_functions: List[str], vocab: Dict):
+    if type == "number" or type == "integer":
+        
+        allowed = [",", "}", "-", ".", "0", "1", "2", "3", "4",
+                   "5", "6", "7", "8", "9"]
+
+        token_ids = [model.encode(a).tolist()[0][0] for a in allowed]
+
+    if type == "string":
+        
+        return []
+
+    return token_ids
+
+
+def test(model, prompt: str, allowed_functions: List[str], type: str):
 
     allowed_paths = [model.encode(func).tolist()[0] for func in allowed_functions]
-    print(allowed_paths)
+
+    print([model.decode(path) for path in allowed_paths])
 
     # Pre-compute all token IDs that represent numbers (for parameters)
 
-#//////////
-    number_token_ids = [
-        token_id for text, token_id in vocab.items() 
-        if text.strip().isdigit() or text.strip() == "."
-    ]
-    print(number_token_ids)
-#/////////
 
-    # 1. "WE DO": Force the start of the JSON
-    json_start = f'{{\n  "prompt": "{prompt}",\n  "name": "'
+    number_token_ids = get_number_token_ids(model, type)
+
+
+    # 1. "WE DO": Force the start of the JSON:
+
+    json_start = f'{{"prompt": "{prompt}", "name": "'
     ids = model.encode(json_start).tolist()[0]
 
     print("--- Starting Generation ---")
 
-    # 2. "LLM DOES": Choose the function name dynamically
+    # 2. "LLM DOES": Choose the function name dynamically:
+
     generated_func_ids = []
 
     while True:
@@ -121,33 +109,62 @@ def test(model, prompt: str, allowed_functions: List[str], vocab: Dict):
                 if step < len(path):
                     allowed_ids.append(path[step])
 
-        # Force the LLM to pick from our calculated allowed_ids
+        # Force the LLM to pick from our calculated allowed_ids:
+
         chosen_id = get_next_token(logits, allowed_ids)
 
         generated_func_ids.append(chosen_id)
         ids.append(chosen_id)
 
-        # STOPPING CONDITION
+        # STOPPING CONDITION:
+
         if generated_func_ids in allowed_paths:
             break
 
-    # 3. "WE DO": Force the transition to parameters
-    
-    params = get_func_parameters(generated_func_ids, get_funcs("data/input/functions_definition.json"))
+    # 3. "WE DO": Force the transition to parameters:
 
-    param_transition = f'",\n  "parameters": {{\n    {}: '
+    ##### Have to be edited #####
+    funcs = get_funcs("data/input/functions_definition.json")
+
+    params = get_func_parameters(model.decode(generated_func_ids), funcs)
+
+    param_transition = f'", "parameters": {{'
     ids += model.encode(param_transition).tolist()[0]
 
-    # 4. "LLM DOES": Pick the number for parameter "a"
-    logits = model.get_logits_from_input_ids(ids)
-    chosen_number_id = get_next_token(logits, number_token_ids)
-    ids.append(chosen_number_id)
+    # 4. "LLM DOES": Pick the number for parameter "a":
 
-    # 5. "WE DO": Close the JSON properly
-    json_end = '\n  }\n}'
+    # logits = model.get_logits_from_input_ids(ids)
+    # value_of_param_as_id = get_next_token(logits, number_token_ids)
+
+    for i in params:
+
+        ids += model.encode(f'"{i}": ').tolist()[0]
+
+        while True:
+
+            logits = model.get_logits_from_input_ids(ids)
+            value_of_param_as_id = get_next_token(logits, number_token_ids)
+
+            print(model.decode(value_of_param_as_id))
+
+            if model.decode(value_of_param_as_id) == "," or model.decode(value_of_param_as_id) == "}":
+                break
+
+            ids.append(value_of_param_as_id)
+
+        if i != params[-1]:
+            ids += model.encode(", ").tolist()[0]
+        else:
+            ids += model.encode("}").tolist()[0]
+            break
+
+    # 5. "WE DO": Close the JSON properly:
+
+    json_end = '}'
     ids += model.encode(json_end).tolist()[0]
 
     # --- FINAL OUTPUT ---
+
     final_text = model.decode(ids)
     print("\nFINAL JSON OUTPUT:\n")
     print(final_text)
@@ -179,8 +196,8 @@ if __name__ == "__main__":
     ]
 
     # 4. Run the test!
-    prompt = "What is the sum of 6 and 7?"
-    test(model, prompt, allowed_funcs, vocab)
+    prompt = "What is the sum of 265 and 345?"
+    test(model, prompt, allowed_funcs, "number")
 
 
 

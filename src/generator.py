@@ -1,7 +1,7 @@
 import json
 import numpy as np
 from typing import List, Dict
-from llm_sdk import Small_LLM_Model
+from llm_sdk.llm_sdk import Small_LLM_Model
 
 
 class ConstrainedGenerator():
@@ -10,17 +10,17 @@ class ConstrainedGenerator():
 
 		self.model = model
 		self.vocab = self._load_vocab()
-		self.id_to_token = {v: k for k, v in self.vocab.items()}
-		self.lbrace_id = self.vocab.get("{") or self.vocab.get("Ġ{")
-		self.quote_id = self.vocab.get('"')
-		self.colon_id = self.vocab.get(":")
+		# self.id_to_token = {v: k for k, v in self.vocab.items()}
+		# self.lbrace_id = self.vocab.get("{") or self.vocab.get("Ġ{")
+		# self.quote_id = self.vocab.get('"')
+		# self.colon_id = self.vocab.get(":")
 
 	def _load_vocab(self) -> Dict[str, int]:
 		"load vocabulary mapping from SDK's tokenizer file."
 		vocab_path = self.model.get_path_to_vocab_file()
-		with open(vocab_path, "r", encoding='utf-8') as v:
-			data = json.load(v)
-		return data
+		# with open(vocab_path, "r", encoding='utf-8') as v:
+		# 	data = json.load(v)
+		return vocab_path
 
 	def get_constrained_logit(self, logits: List[float], allowed_id: int) -> int:
 
@@ -37,5 +37,5 @@ c = ConstrainedGenerator(model)
 vocab = c._load_vocab()
 mask = c.get_constrained_logit([1,2,3,4,5], 3)
 
-print(mask)
+print(vocab)
 
