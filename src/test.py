@@ -61,12 +61,20 @@ def main():
 
 def get_number_token_ids(model: Small_LLM_Model ,type: str) -> List[int]:
 
-    if type == "number" or type == "integer":
+    if type == "integer":
         
+        allowed = [",", "}", "-", "0", "1", "2", "3", "4",
+                   "5", "6", "7", "8", "9"]
+
+        token_ids = [model.encode(a).tolist()[0][0] for a in allowed]
+
+    if type == "number":
+    
         allowed = [",", "}", "-", ".", "0", "1", "2", "3", "4",
                    "5", "6", "7", "8", "9"]
 
         token_ids = [model.encode(a).tolist()[0][0] for a in allowed]
+
 
     if type == "string":
         
@@ -234,9 +242,6 @@ def load_vocab(model: Small_LLM_Model) -> Dict[str, int]:
 	return data
 
 
-
-
-
 if __name__ == "__main__":
     # 1. Initialize your model (Adjust to your actual class name)
     model = Small_LLM_Model() 
@@ -255,8 +260,8 @@ if __name__ == "__main__":
     ]
 
     # 4. Run the test!
-    prompt = "Great John"
-    test(model, prompt, allowed_funcs, "string")
+    prompt = "What is the sum of 2.2 and 4.4?"
+    test(model, prompt, allowed_funcs, "integer")
 
 
 
