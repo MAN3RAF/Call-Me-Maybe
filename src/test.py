@@ -2,7 +2,7 @@ from llm_sdk.llm_sdk import Small_LLM_Model
 from typing import List, Dict, Any
 import numpy as np
 import json
-from src.func_utils import get_func_parameters, get_funcs, get_next_token
+from src.func_utils import get_func_parameters, get_funcs, get_next_token, get_system_prompt, get_func_type
 
 
 def get_next_token1(logits: List, allowed_ids: List) -> int:
@@ -75,91 +75,101 @@ def get_number_token_ids(model: Small_LLM_Model ,type: str) -> List[int]:
 
         token_ids = [model.encode(a).tolist()[0][0] for a in allowed]
 
-
     if type == "string":
         
         return []
 
+    if type == "boolean":
+         
+        allowed = ['true', 'false']
+
+        token_ids = [model.encode(a).tolist()[0][0] for a in allowed]
+
     return token_ids
 
 
-
-def build_number_json(ids: Any, params: List, number_token_ids: List):
+def get_number_value(ids: Any, number_token_ids: List):
      
-    for i in params:
 
-        print(params)
+    # print(params)
+
+    while True:
+
+        logits = model.get_logits_from_input_ids(ids)
+        value_of_param_as_id = get_next_token(logits, number_token_ids)
+
+        if model.decode([value_of_param_as_id]) == "," or model.decode([value_of_param_as_id]) == "}":
+            break
+
+        ids.append(value_of_param_as_id)
 
 
-        ids += model.encode(f'"{i}": ').tolist()[0]
+def get_string_value(ids: Any, number_token_ids: List):
 
-        while True:
+    while True:
 
-            logits = model.get_logits_from_input_ids(ids)
-            value_of_param_as_id = get_next_token(logits, number_token_ids)
+        logits = model.get_logits_from_input_ids(ids)
+        value_of_param_as_id = get_next_token(logits, number_token_ids)
 
-            # print(model.decode(value_of_param_as_id))
+        token_text = model.decode([value_of_param_as_id])
 
-            if model.decode([value_of_param_as_id]) == "," or model.decode([value_of_param_as_id]) == "}":
-                break
+        if '"' in token_text:
+            ids += model.encode('"').tolist()[0]
+            break
 
-            ids.append(value_of_param_as_id)
+        ids.append(value_of_param_as_id)
 
-        if i != params[-1]:
+
+def get_boolean_value(ids: Any, number_token_ids: List):
+
+    logits = model.get_logits_from_input_ids(ids)
+    value_of_param_as_id = get_next_token(logits, number_token_ids)
+
+    ids.append(value_of_param_as_id)
+
+
+def build_json(ids: Any, params: Dict):
+
+    last_key = list(params.keys())[-1]
+
+    for param_name, param_info in params.items():
+
+        number_token_ids = get_number_token_ids(model, param_info['type'])
+
+        if param_info['type'] == 'number' or param_info['type'] == 'integer':
+            ids += model.encode(f'"{param_name}": ').tolist()[0]
+            get_number_value(ids, number_token_ids)
+
+        elif param_info['type'] == "string":
+            ids += model.encode(f'"{param_name}": "').tolist()[0]
+            get_string_value(ids, number_token_ids)
+
+        elif param_info['type'] == "boolean":
+            ids += model.encode(f'"{param_name}": ').tolist()[0]
+            get_boolean_value(ids, number_token_ids)
+
+        if param_name != last_key:
             ids += model.encode(", ").tolist()[0]
-        else:
-            ids += model.encode("}").tolist()[0]
-            break
-
-    return ids
-
-def build_string_json(ids: Any, params: List, number_token_ids: List):
-     
-    for i in params:
-
-        print(params)
-
-
-        ids += model.encode(f'"{i}": "').tolist()[0]
-
-        while True:
-
-            logits = model.get_logits_from_input_ids(ids)
-            value_of_param_as_id = get_next_token(logits, number_token_ids)
-
-            # print(model.decode(value_of_param_as_id))
             
-            token_text = model.decode([value_of_param_as_id])
+    ids += model.encode("}").tolist()[0]
 
-            if '"' in token_text:
-                ids += model.encode('"').tolist()[0]
-                break
 
-            ids.append(value_of_param_as_id)
-
-        if i != params[-1]:
-            ids += model.encode('", ').tolist()[0]
-        else:
-            ids += model.encode("}").tolist()[0]
-            break
-
-    return ids
-
-def test(model, prompt: str, allowed_functions: List[str], type: str):
+def test(model: Small_LLM_Model, prompt: str, allowed_functions: List[str]):
 
     allowed_paths = [model.encode(func).tolist()[0] for func in allowed_functions]
 
-    print([model.decode(path) for path in allowed_paths])
+    # print([model.decode(path) for path in allowed_paths])
 
     # Pre-compute all token IDs that represent numbers (for parameters)
 
-
-    number_token_ids = get_number_token_ids(model, type)
-
-
     # 1. "WE DO": Force the start of the JSON:
 
+    sys_prompt = get_system_prompt(get_funcs("data/input/functions_definition.json"))
+
     json_start = f'{{"prompt": "{prompt}", "name": "'
+    
+    json_start = sys_prompt + "\n\n" + json_start
+    
     ids = model.encode(json_start).tolist()[0]
 
     print("--- Starting Generation ---")
@@ -174,7 +184,7 @@ def test(model, prompt: str, allowed_functions: List[str], type: str):
 
         allowed_ids = []
 
-        # print(allowed_ids)
+        # print(allowed_ids)i[type]
 
         for path in allowed_paths:
             # If the path matches what we've generated so far...
@@ -210,6 +220,8 @@ def test(model, prompt: str, allowed_functions: List[str], type: str):
 
     params = get_func_parameters(model.decode(generated_func_ids), funcs)
 
+    # print(model.decode(generated_func_ids))
+
     param_transition = f'", "parameters": {{'
     ids += model.encode(param_transition).tolist()[0]
 
@@ -218,10 +230,7 @@ def test(model, prompt: str, allowed_functions: List[str], type: str):
     # logits = model.get_logits_from_input_ids(ids)
     # value_of_param_as_id = get_next_token(logits, number_token_ids)
 
-    if type == "number" or type == "integer":
-        ids = build_number_json(ids, params, number_token_ids)
-    elif type == "string":
-         ids = build_string_json(ids, params, number_token_ids)
+    build_json(ids, params)
 
     # 5. "WE DO": Close the JSON properly:
 
@@ -231,6 +240,9 @@ def test(model, prompt: str, allowed_functions: List[str], type: str):
     # --- FINAL OUTPUT ---
 
     final_text = model.decode(ids)
+
+    garbage, final_text  = final_text.split('{"prompt":')
+
     print("\nFINAL JSON OUTPUT:\n")
     print(final_text)
 
@@ -238,7 +250,7 @@ def load_vocab(model: Small_LLM_Model) -> Dict[str, int]:
 	"load vocabulary mapping from SDK's tokenizer file."
 	vocab_path = model.get_path_to_vocab_file()
 	with open(vocab_path, "r", encoding='utf-8') as v:
-		data = json.load(v)
+		data: Dict[str, int] = json.load(v)
 	return data
 
 
@@ -255,13 +267,27 @@ if __name__ == "__main__":
         "fn_greet", 
         "fn_add_numbers",
         "fn_reverse_string",
-        # "fn_get_square_root",
+        "fn_get_square_root",
         "fn_substitute_string_with_regex",
+        'fn_answer_yes_no',
     ]
 
     # 4. Run the test!
-    prompt = "What is the sum of 2.2 and 4.4?"
-    test(model, prompt, allowed_funcs, "integer")
+    prompt = "What is the sum of 2 and 4?"
+    test(model, prompt, allowed_funcs)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -39,6 +39,15 @@
     }
   },
   {
+    "name": "fn_answer_yes_no",
+    "description": "Answer a simple yes or no question based on the user's prompt.",
+    "parameters": {
+      "answer": {
+        "type": "boolean"
+      }
+    }
+  },
+  {
     "name": "fn_get_square_root",
     "description": "Calculate the square root of a number.",
     "parameters": {
