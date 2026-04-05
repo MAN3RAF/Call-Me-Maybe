@@ -90,9 +90,6 @@ def get_number_token_ids(model: Small_LLM_Model ,type: str) -> List[int]:
 
 def get_number_value(ids: Any, number_token_ids: List):
      
-
-    # print(params)
-
     while True:
 
         logits = model.get_logits_from_input_ids(ids)
