@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List, Dict, Any
 import json
 import numpy as np
 
@@ -36,8 +36,19 @@ def get_funcs(path: str) -> List:
 	with open(path, "r") as f:
 		data = json.load(f)
 
-	
 	return data
+
+def get_funcs_names(path: str) -> List[str]:
+
+	funcs_names = []
+
+	data = get_funcs(path)
+
+	for d in data:
+		funcs_names.append(d['name'])
+
+	return funcs_names
+
 
 
 def get_prompts(path: str) -> List:
@@ -48,10 +59,38 @@ def get_prompts(path: str) -> List:
 	print(data)
 
 
-def get_system_prompt(funcs: List) -> str:
+# def upgrade_prompt(prompt: str, functions: Dict[str, Any]) -> str:
 
-	system_prompt = "You are a smart AI. You must choose the correct function from the list below based on the user's prompt.\n\nAvailable functions:\n"
+#     lines = []
+#     for name, details in functions.items():
+#         params = ", ".join(
+#             f"{k}: {v['type']}" for k, v in details["parameters"].items()
+#         )
+#         lines.append(f"- {name}({params}): {details['description']}")
+#     func_block = "\n".join(lines)
+#     return (
+#         f"Available functions:\n{func_block}\n\n"
+#         f"User request: {prompt}\n\n"
+#         "Respond with a JSON object with keys 'name' and 'parameters'."
+#     )
 
+
+def get_system_prompt(prompt: str, funcs: List) -> str:
+	"""Build a structured prompt with the user request and function defs.
+
+    Args:
+        prompt: The original natural language prompt.
+        functions: List of available function definitions.
+
+    Returns:
+        A formatted prompt string suitable for the LLM.
+    """
+
+	system_prompt = "You are a smart AI. You must choose the correct function from the list below based on the user's prompt.\n\n\n"
+
+	system_prompt += f"User request: {prompt}\n"
+
+	system_prompt += f"\nAvailable functions:\n"
 
 	for func in funcs:
         
@@ -61,37 +100,16 @@ def get_system_prompt(funcs: List) -> str:
 
 		func_param = func['parameters']
 
-		system_prompt += f"\n- {func_name}: {func_desc}\n  Parameters:\n"
+		system_prompt += f"\n{func_name}\n"
 
 		for param_name, param_details in func_param.items():
 
 			param_type = param_details['type']
 
-			system_prompt += f"  - {param_name}: ({param_type})\n"
+			system_prompt += f"({param_name}: {param_type})\n"
+		
+		system_prompt += f"{func_desc}."
 
-	system_prompt += "\nExtract the correct function and parameters for this prompt into JSON:\n\n"
+	system_prompt += "\n\nRespond with a JSON object with keys 'name' and 'parameters'.\n\n"
 
 	return system_prompt
-
-
-
-def get_func_type(func_name: str, funcs: List):
-	
-	for i in range(len(funcs)):
-
-		if funcs[i]["name"] == func_name:
-			par_dict = funcs[i]["parameters"]
-
-			params = list(par_dict.values())
-	
-	print(params)
-
-
-
-
-
-# get_func_parameters("fn_add_numbers", get_funcs("data/input/functions_definition.json"))
-
-
-
-# get_func_type("fn_add_numbers", get_funcs("data/input/functions_definition.json"))
