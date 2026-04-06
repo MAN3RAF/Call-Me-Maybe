@@ -1,37 +1,45 @@
 import sys
+import os
 
 def main() -> None:
 
-    parse = sys.argv
     try:
-        if not parse[1] == '--functions_definition':
-            raise ValueError("[Error] wrong '--functions_definition' format!")
-        if not parse[3] == '--input':
-            raise ValueError("[Error] wrong '--input' format!")
-        if not parse[5] == '--output':
-            raise ValueError("[Error] wrong '--output' format!")
+
+        prompts:str = None
+        output_path:str = None
+        funcs_path:str = None
 
 
-        funcs_path = parse[2]
-        prompts = parse[4]
-        output_path = parse[6]
+        for i in range(len(sys.argv)):
 
-        if not '.json' in output_path:
-            raise ValueError("[Error] wrong 'json' format!")
+            if sys.argv[i] == '--input' and i + 1 < len(sys.argv):
+                prompts = sys.argv[i + 1] 
+            elif sys.argv[i] == '--output' and i + 1 < len(sys.argv):
+                output_path = sys.argv[i + 1] 
+            elif sys.argv[i] == '--functions_definition' and i + 1 < len(sys.argv):
+                funcs_path = sys.argv[i + 1]
 
-    
-        with open(funcs_path, "r") as f:
-            pass
+        if len(sys.argv) > 7:
+            raise ValueError("[Error] wrong command format, dont add garbage to the command!")
 
-        with open(prompts, "r") as f:
-            pass
+        if not prompts:
+            raise ValueError("[Error] '--input' wrong format!")
+        if not funcs_path:
+            raise ValueError("[Error] '--functions_definition' wrong format!")
+        if not output_path:
+            raise ValueError("[Error] '--output' wrong format!")
 
-    except Exception as e:
-        print(f"[Error] {str(e).split("]")[1].strip()}")
+        if not os.path.exists(prompts):
+            raise ValueError(f"[Error] The file '{prompts}' does not exist!")
+        if not os.path.exists(funcs_path):
+            raise ValueError(f"[Error] The file '{funcs_path}' does not exist!")
+
+        if not output_path.endswith('.json'):
+            raise ValueError(f"[Error] '{output_path}' wrong 'json' format!")
 
 
-    # print(f"\n{funcs_path}\n\n{prompts}\n\n{output_path}\n")
-
+    except ValueError as e:
+        print(e)
 
 if __name__ == "__main__":
 

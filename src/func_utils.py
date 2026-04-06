@@ -31,18 +31,16 @@ def get_func_parameters(func_name: str, funcs_list: List[Dict]) -> Dict:
 	return params
 
 
-def get_funcs(path: str) -> List:
+# def get_funcs(path: str) -> List:
 
-	with open(path, "r") as f:
-		data = json.load(f)
+# 	with open(path, "r") as f:
+# 		data = json.load(f)
 
-	return data
+# 	return data
 
-def get_funcs_names(path: str) -> List[str]:
+def get_funcs_names(data: List) -> List[str]:
 
 	funcs_names = []
-
-	data = get_funcs(path)
 
 	for d in data:
 		funcs_names.append(d['name'])
