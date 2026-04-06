@@ -1,32 +1,36 @@
-import argparse
-import src.validate as validate
-from src.func_utils import get_func_parameters
-from src.__main__ import main
+import sys
 
-def test() -> None:
+def main() -> None:
 
-    parser = argparse.ArgumentParser()
+    parse = sys.argv
+    try:
+        if not parse[1] == '--functions_definition':
+            raise ValueError("[Error] wrong '--functions_definition' format!")
+        if not parse[3] == '--input':
+            raise ValueError("[Error] wrong '--input' format!")
+        if not parse[5] == '--output':
+            raise ValueError("[Error] wrong '--output' format!")
 
-    parser.add_argument("--functions_definition", 
-                        default="data/input/functions_definition.json",
-                        help="Path to function definitions")
+
+        funcs_path = parse[2]
+        prompts = parse[4]
+        output_path = parse[6]
+
+        if not '.json' in output_path:
+            raise ValueError("[Error] wrong 'json' format!")
+
     
-    parser.add_argument("--input", 
-                        default="data/input/function_calling_tests.json",
-                        help="Path to input prompts")
-    
-    parser.add_argument("--output", 
-                        default="data/output/function_calling_results.json",
-                        help="Path to save results")
+        with open(funcs_path, "r") as f:
+            pass
 
-    args = parser.parse_args()
+        with open(prompts, "r") as f:
+            pass
 
-    func_list = validate.func_validate(args.functions_definition)
-    prompt_list = validate.prompt_validate(args.input)
+    except Exception as e:
+        print(f"[Error] {str(e).split("]")[1].strip()}")
 
-    g = get_func_parameters("fn_substitute_string_with_regex", func_list)
 
-    print(g)
+    # print(f"\n{funcs_path}\n\n{prompts}\n\n{output_path}\n")
 
 
 if __name__ == "__main__":

@@ -1,4 +1,5 @@
 from llm_sdk.llm_sdk import Small_LLM_Model
+import sys
 from typing import List, Dict, Any
 import json
 from src.func_utils import get_func_parameters, get_funcs, get_next_token, get_system_prompt, get_prompts, get_funcs_names
@@ -103,17 +104,15 @@ def build_json(model: Small_LLM_Model, ids: Any, params: Dict):
         'fn_answer_yes_no',
     ]
 
-def json_generator(model: Small_LLM_Model, prompt: str, allowed_functions_names: List[str]):
+def json_generator(model: Small_LLM_Model, prompt: str, allowed_functions_names: List[str], funcs: List):
 
     allowed_paths = [model.encode(func).tolist()[0] for func in allowed_functions_names]
-
-    # print([model.decode(path) for path in allowed_paths])
 
     # Pre-compute all token IDs that represent numbers (for parameters)
 
     # 1. "WE DO": Force the start of the JSON:
 
-    sys_prompt = get_system_prompt(prompt, get_funcs("data/input/functions_definition.json"))
+    sys_prompt = get_system_prompt(prompt, funcs)
 
     json_start = f'{{"prompt": "{prompt}", "name": "'
     
@@ -133,51 +132,33 @@ def json_generator(model: Small_LLM_Model, prompt: str, allowed_functions_names:
 
         allowed_ids = []
 
-        # print(allowed_ids)i[type]
-
         for path in allowed_paths:
             # If the path matches what we've generated so far...
-            # print(model.decode(path))
+
             if path[:step] == generated_func_ids:
-                # print(model.decode(generated_func_ids))
                 if step < len(path):
-                    # print(step)
                     allowed_ids.append(path[step])
 
         # Force the LLM to pick from our calculated allowed_ids:
 
         chosen_id = get_next_token(logits, allowed_ids)
 
-        # print(model.decode(chosen_id))
-
         generated_func_ids.append(chosen_id)
         ids.append(chosen_id)
 
         # STOPPING CONDITION:
 
-        # print(model.decode(generated_func_ids))
-        # print(model.decode(allowed_paths[0]))
-
         if generated_func_ids in allowed_paths:
-            # print(model.decode(generated_func_ids))
-            # print("Broke")
             break
+
     # 3. "WE DO": Force the transition to parameters:
 
-    ##### Have to be edited #####
-    funcs = get_funcs("data/input/functions_definition.json")
-
     params = get_func_parameters(model.decode(generated_func_ids), funcs)
-
-    # print(model.decode(generated_func_ids))
 
     param_transition = f'", "parameters": {{'
     ids += model.encode(param_transition).tolist()[0]
 
     # 4. "LLM DOES": Pick the number for parameter "a":
-
-    # logits = model.get_logits_from_input_ids(ids)
-    # value_of_param_as_id = get_next_token(logits, number_token_ids)
 
     build_json(model, ids, params)
 
@@ -207,7 +188,36 @@ def main():
 
     model = Small_LLM_Model() 
 
-    allowed_funcs_names = get_funcs_names("data/input/functions_definition.json")
+    parse = sys.argv
 
-    prompt = "Replace all vowels in 'Programming is fun' with asterisks"
-    json_generator(model, prompt, allowed_funcs_names)
+    try:
+        if not parse[1] == '--functions_definition':
+            raise ValueError("[Error] wrong '--functions_definition' format!")
+        if not parse[3] == '--input':
+            raise ValueError("[Error] wrong '--input' format!")
+        if not parse[5] == '--output':
+            raise ValueError("[Error] wrong '--output' format!")
+
+        funcs_path = parse[2]
+        prompts_path = parse[4]
+        output_path = parse[6]
+
+        if not '.json' in output_path:
+            raise ValueError("[Error] wrong 'json' format!")
+
+        with open(funcs_path, "r") as f:
+            funcs = json.load(f)
+
+        with open(prompts_path, "r") as p:
+            prompts = json.load(p)
+
+    except Exception as e:
+        print(f"[Error] {str(e).split("]")[1].strip()}")
+
+    allowed_funcs_names = get_funcs_names(funcs_path)
+
+    for prompt in prompts:
+        json_generator(model, prompt, allowed_funcs_names, funcs)
+
+
+main()
