@@ -48,15 +48,6 @@ def get_funcs_names(data: List) -> List[str]:
 	return funcs_names
 
 
-
-def get_prompts(path: str) -> List:
-
-	with open(path, "r") as f:
-		data = json.load(f)
-
-	print(data)
-
-
 # def upgrade_prompt(prompt: str, functions: Dict[str, Any]) -> str:
 
 #     lines = []

@@ -3,7 +3,7 @@ import sys
 import os
 from typing import List, Dict, Any
 import json
-from src.func_utils import get_func_parameters, get_next_token, get_system_prompt, get_prompts, get_funcs_names
+from src.func_utils import get_func_parameters, get_next_token, get_system_prompt, get_funcs_names
 from src.validate import func_validate, prompt_validate
 
 
@@ -176,14 +176,8 @@ def json_generator(model: Small_LLM_Model, prompt: str, allowed_functions_names:
     final_text  = '{"prompt":' + final_text.split('{"prompt":')[1]
 
     print("\nFINAL JSON OUTPUT:\n")
-    print(final_text)
 
-def load_vocab(model: Small_LLM_Model) -> Dict[str, int]:
-	"load vocabulary mapping from SDK's tokenizer file."
-	vocab_path = model.get_path_to_vocab_file()
-	with open(vocab_path, "r", encoding='utf-8') as v:
-		data: Dict[str, int] = json.load(v)
-	return data
+    print(final_text)
 
 
 def main():
@@ -223,7 +217,6 @@ def main():
 
     funcs = func_validate(funcs_path)
 
-    # print(funcs)
 
     model = Small_LLM_Model()
 
