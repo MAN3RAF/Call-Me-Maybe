@@ -2,6 +2,7 @@ from llm_sdk.llm_sdk import Small_LLM_Model
 import sys
 import os
 import re
+from pathlib import Path
 from typing import List, Dict, Any
 import json
 from src.func_utils import get_func_parameters, get_next_token, get_system_prompt, get_funcs_names
@@ -126,7 +127,7 @@ def json_generator(model: Small_LLM_Model, prompt: str, allowed_functions_names:
     
     ids = model.encode(json_start).tolist()[0]
 
-    print("--- Starting Generation ---")
+    # print("--- Starting Generation ---")
 
     # 2. "LLM DOES": Choose the function name dynamically:
 
@@ -179,7 +180,7 @@ def json_generator(model: Small_LLM_Model, prompt: str, allowed_functions_names:
 
     final_text  = '{"prompt":' + final_text.split('{"prompt":')[1]
 
-    print("\nFINAL JSON OUTPUT:\n")
+    # print("\nFINAL JSON OUTPUT:\n")
 
     
 
@@ -195,6 +196,8 @@ def json_generator(model: Small_LLM_Model, prompt: str, allowed_functions_names:
 
         elif param_info['type'] == 'integer':
             final_text['parameters'][param_name] = int(final_text['parameters'][param_name])
+
+    print(final_text)
 
     return final_text
 
@@ -234,14 +237,15 @@ def main():
 
     result = []
 
+    output_path = Path(output_path)
+
     for prompt in prompts:
         prompt_text = prompt['prompt']
 
         result.append(json_generator(model, prompt_text, allowed_funcs_names, funcs))
 
     
-    os.makedirs(output_path, exist_ok= True)
+    os.makedirs(output_path.parent, exist_ok= True)
 
-    with open(output_path, 'w')
-
-
+    with open(output_path, 'w') as f:
+        json.dump(result, f, indent=4)
