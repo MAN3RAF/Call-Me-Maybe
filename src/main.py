@@ -1,6 +1,7 @@
 from llm_sdk.llm_sdk import Small_LLM_Model
 import sys
 import os
+import re
 from typing import List, Dict, Any
 import json
 from src.func_utils import get_func_parameters, get_next_token, get_system_prompt, get_funcs_names
@@ -116,7 +117,10 @@ def json_generator(model: Small_LLM_Model, prompt: str, allowed_functions_names:
 
     sys_prompt = get_system_prompt(prompt, funcs)
 
-    json_start = f'{{"prompt": "{prompt}", "name": "'
+    safe_prompt = json.dumps(prompt) 
+
+    # Inject it WITHOUT adding your own quotes around it!
+    json_start = f'{{"prompt": {safe_prompt}, "name": "'
     
     json_start = sys_prompt + "\n\n" + json_start
     
@@ -177,14 +181,28 @@ def json_generator(model: Small_LLM_Model, prompt: str, allowed_functions_names:
 
     print("\nFINAL JSON OUTPUT:\n")
 
-    print(final_text)
+    
 
+    clean_text = re.sub(r'\\([^"\\/bfnrtu])', r'\\\\\1', final_text)
+
+    final_text = json.loads(clean_text)
+
+
+    for param_name , param_info in params.items():
+
+        if param_info['type'] == 'number':
+            final_text['parameters'][param_name] = float(final_text['parameters'][param_name])
+
+        elif param_info['type'] == 'integer':
+            final_text['parameters'][param_name] = int(final_text['parameters'][param_name])
+
+    return final_text
 
 def main():
 
-    prompts:str = None
-    output_path:str = None
-    funcs_path:str = None
+    prompts:str = "data/input/function_calling_tests.json"
+    output_path:str = "data/output/function_calls.json"
+    funcs_path:str = "data/input/functions_definition.json"
 
     for i in range(len(sys.argv)):
 
@@ -198,13 +216,6 @@ def main():
     if len(sys.argv) > 7:
         raise ValueError("[Error] wrong command format, dont add garbage to the command!")
 
-    if not prompts:
-        raise ValueError("[Error] '--input' wrong format!")
-    if not funcs_path:
-        raise ValueError("[Error] '--functions_definition' wrong format!")
-    if not output_path:
-        raise ValueError("[Error] '--output' wrong format!")
-
     if not os.path.exists(prompts):
         raise ValueError(f"[Error] The file '{prompts}' does not exist!")
     if not os.path.exists(funcs_path):
@@ -212,15 +223,25 @@ def main():
 
     if not output_path.endswith('.json'):
         raise ValueError(f"[Error] '{output_path}' wrong 'json' format!")
-    
+
     prompts = prompt_validate(prompts)
 
     funcs = func_validate(funcs_path)
-
 
     model = Small_LLM_Model()
 
     allowed_funcs_names = get_funcs_names(funcs)
 
+    result = []
+
     for prompt in prompts:
-        json_generator(model, prompt, allowed_funcs_names, funcs)
+        prompt_text = prompt['prompt']
+
+        result.append(json_generator(model, prompt_text, allowed_funcs_names, funcs))
+
+    
+    os.makedirs(output_path, exist_ok= True)
+
+    with open(output_path, 'w')
+
+
