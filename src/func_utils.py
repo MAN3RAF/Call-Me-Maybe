@@ -2,6 +2,7 @@ from typing import List, Dict, Any
 import json
 import numpy as np
 
+
 def get_next_token(logits: List[float], allowed_ids: List[int]) -> int:
 	"""Forces the LLM to pick only from allowed_ids using -inf."""
 	
@@ -31,13 +32,6 @@ def get_func_parameters(func_name: str, funcs_list: List[Dict]) -> Dict:
 	return params
 
 
-# def get_funcs(path: str) -> List:
-
-# 	with open(path, "r") as f:
-# 		data = json.load(f)
-
-# 	return data
-
 def get_funcs_names(data: List) -> List[str]:
 
 	funcs_names = []
@@ -46,22 +40,6 @@ def get_funcs_names(data: List) -> List[str]:
 		funcs_names.append(d['name'])
 
 	return funcs_names
-
-
-# def upgrade_prompt(prompt: str, functions: Dict[str, Any]) -> str:
-
-#     lines = []
-#     for name, details in functions.items():
-#         params = ", ".join(
-#             f"{k}: {v['type']}" for k, v in details["parameters"].items()
-#         )
-#         lines.append(f"- {name}({params}): {details['description']}")
-#     func_block = "\n".join(lines)
-#     return (
-#         f"Available functions:\n{func_block}\n\n"
-#         f"User request: {prompt}\n\n"
-#         "Respond with a JSON object with keys 'name' and 'parameters'."
-#     )
 
 
 def get_system_prompt(prompt: str, funcs: List) -> str:

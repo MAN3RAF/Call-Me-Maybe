@@ -99,16 +99,9 @@ def build_json(model: Small_LLM_Model, ids: Any, params: Dict):
             ids += model.encode(", ").tolist()[0]
             
     ids += model.encode("}").tolist()[0]
-[
-        "fn_greet", 
-        "fn_add_numbers",
-        "fn_reverse_string",
-        "fn_get_square_root",
-        "fn_substitute_string_with_regex",
-        'fn_answer_yes_no',
-    ]
 
-def json_generator(model: Small_LLM_Model, prompt: str, allowed_functions_names: List[str], funcs: List):
+
+def json_generator(model: Small_LLM_Model, prompt: str, allowed_functions_names: List[str], funcs: List) -> Any:
 
     allowed_paths = [model.encode(func).tolist()[0] for func in allowed_functions_names]
 
@@ -126,8 +119,6 @@ def json_generator(model: Small_LLM_Model, prompt: str, allowed_functions_names:
     json_start = sys_prompt + "\n\n" + json_start
     
     ids = model.encode(json_start).tolist()[0]
-
-    # print("--- Starting Generation ---")
 
     # 2. "LLM DOES": Choose the function name dynamically:
 
@@ -180,10 +171,6 @@ def json_generator(model: Small_LLM_Model, prompt: str, allowed_functions_names:
 
     final_text  = '{"prompt":' + final_text.split('{"prompt":')[1]
 
-    # print("\nFINAL JSON OUTPUT:\n")
-
-    
-
     clean_text = re.sub(r'\\([^"\\/bfnrtu])', r'\\\\\1', final_text)
 
     final_text = json.loads(clean_text)
@@ -200,6 +187,7 @@ def json_generator(model: Small_LLM_Model, prompt: str, allowed_functions_names:
     print(final_text)
 
     return final_text
+
 
 def main():
 
