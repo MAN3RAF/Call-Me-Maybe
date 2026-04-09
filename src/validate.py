@@ -1,5 +1,5 @@
 from pydantic import BaseModel, ValidationError
-from typing import Dict, List, Optional
+from typing import Dict, List
 import json
 
 
@@ -30,7 +30,8 @@ def parse(location: str) -> List | None:
 
 def func_validate(location: str) -> List:
     data = parse(location)
-    if data is None: return []
+    if data is None:
+        return []
 
     valid_funcs = []
     for f in data:
@@ -38,14 +39,15 @@ def func_validate(location: str) -> List:
             # Using **f automatically maps dict keys to class attributes
             f_v = FunctionValidator(**f)
             valid_funcs.append(f_v.model_dump())
-        except (ValidationError, TypeError) as e:
-            print(f"ERROR: Skipping invalid function entry.")
+        except (ValidationError, TypeError):
+            print("ERROR: Skipping invalid function entry.")
     return valid_funcs
 
 
 def prompt_validate(location: str) -> List:
     data = parse(location)
-    if data is None: return []
+    if data is None:
+        return []
 
     valid_prompts = []
     for p in data:

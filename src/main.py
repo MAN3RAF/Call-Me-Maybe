@@ -5,32 +5,32 @@ import re
 from pathlib import Path
 from typing import List, Dict, Any
 import json
-from src.func_utils import get_func_parameters, get_next_token, get_system_prompt, get_funcs_names
+from src.func_utils import (get_func_parameters, get_next_token,
+                            get_system_prompt, get_funcs_names)
 from src.validate import func_validate, prompt_validate
 
 
-def get_number_token_ids(model: Small_LLM_Model ,type: str) -> List[int]:
+def get_number_token_ids(model: Small_LLM_Model, type: str) -> List[int]:
 
     if type == "integer":
-        
+
         allowed = [",", "}", "-", "0", "1", "2", "3", "4",
                    "5", "6", "7", "8", "9"]
 
         token_ids = [model.encode(a).tolist()[0][0] for a in allowed]
 
     if type == "number":
-    
+
         allowed = [",", "}", "-", ".", "0", "1", "2", "3", "4",
                    "5", "6", "7", "8", "9"]
 
         token_ids = [model.encode(a).tolist()[0][0] for a in allowed]
 
     if type == "string":
-        
         return []
 
     if type == "boolean":
-         
+
         allowed = ['true', 'false']
 
         token_ids = [model.encode(a).tolist()[0][0] for a in allowed]
@@ -39,13 +39,14 @@ def get_number_token_ids(model: Small_LLM_Model ,type: str) -> List[int]:
 
 
 def get_number_value(model: Small_LLM_Model, ids: Any, number_token_ids: List):
-     
+
     while True:
 
         logits = model.get_logits_from_input_ids(ids)
         value_of_param_as_id = get_next_token(logits, number_token_ids)
 
-        if model.decode([value_of_param_as_id]) == "," or model.decode([value_of_param_as_id]) == "}":
+        if (model.decode([value_of_param_as_id]) == "," or
+                model.decode([value_of_param_as_id]) == "}"):
             break
 
         ids.append(value_of_param_as_id)
@@ -67,7 +68,9 @@ def get_string_value(model: Small_LLM_Model, ids: Any, number_token_ids: List):
         ids.append(value_of_param_as_id)
 
 
-def get_boolean_value(model: Small_LLM_Model, ids: Any, number_token_ids: List):
+def get_boolean_value(model: Small_LLM_Model,
+                      ids: Any,
+                      number_token_ids: List):
 
     logits = model.get_logits_from_input_ids(ids)
     value_of_param_as_id = get_next_token(logits, number_token_ids)
@@ -97,13 +100,16 @@ def build_json(model: Small_LLM_Model, ids: Any, params: Dict):
 
         if param_name != last_key:
             ids += model.encode(", ").tolist()[0]
-            
+
     ids += model.encode("}").tolist()[0]
 
 
-def json_generator(model: Small_LLM_Model, prompt: str, allowed_functions_names: List[str], funcs: List) -> Any:
+def json_generator(model: Small_LLM_Model, prompt: str,
+                   allowed_functions_names: List[str],
+                   funcs: List) -> Any:
 
-    allowed_paths = [model.encode(func).tolist()[0] for func in allowed_functions_names]
+    allowed_paths = [model.encode(func).tolist()[0]
+                     for func in allowed_functions_names]
 
     # Pre-compute all token IDs that represent numbers (for parameters)
 
@@ -111,13 +117,13 @@ def json_generator(model: Small_LLM_Model, prompt: str, allowed_functions_names:
 
     sys_prompt = get_system_prompt(prompt, funcs)
 
-    safe_prompt = json.dumps(prompt) 
+    safe_prompt = json.dumps(prompt)
 
     # Inject it WITHOUT adding your own quotes around it!
     json_start = f'{{"prompt": {safe_prompt}, "name": "'
-    
+
     json_start = sys_prompt + "\n\n" + json_start
-    
+
     ids = model.encode(json_start).tolist()[0]
 
     # 2. "LLM DOES": Choose the function name dynamically:
@@ -153,7 +159,7 @@ def json_generator(model: Small_LLM_Model, prompt: str, allowed_functions_names:
 
     params = get_func_parameters(model.decode(generated_func_ids), funcs)
 
-    param_transition = f'", "parameters": {{'
+    param_transition = '", "parameters": {'
     ids += model.encode(param_transition).tolist()[0]
 
     # 4. "LLM DOES": Pick the number for parameter "a":
@@ -169,20 +175,23 @@ def json_generator(model: Small_LLM_Model, prompt: str, allowed_functions_names:
 
     final_text = model.decode(ids)
 
-    final_text  = '{"prompt":' + final_text.split('{"prompt":')[1]
+    final_text = '{"prompt":' + final_text.split('{"prompt":')[1]
 
     clean_text = re.sub(r'\\([^"\\/bfnrtu])', r'\\\\\1', final_text)
 
     final_text = json.loads(clean_text)
 
-
-    for param_name , param_info in params.items():
+    for param_name, param_info in params.items():
 
         if param_info['type'] == 'number':
-            final_text['parameters'][param_name] = float(final_text['parameters'][param_name])
+            final_text['parameters'][param_name] = float(
+                final_text['parameters'][param_name]
+                )
 
         elif param_info['type'] == 'integer':
-            final_text['parameters'][param_name] = int(final_text['parameters'][param_name])
+            final_text['parameters'][param_name] = int(
+                final_text['parameters'][param_name]
+                )
 
     print(final_text)
 
@@ -191,21 +200,22 @@ def json_generator(model: Small_LLM_Model, prompt: str, allowed_functions_names:
 
 def main():
 
-    prompts:str = "data/input/function_calling_tests.json"
-    output_path:str = "data/output/function_calls.json"
-    funcs_path:str = "data/input/functions_definition.json"
+    prompts: str = "data/input/function_calling_tests.json"
+    output_path: str = "data/output/function_calls.json"
+    funcs_path: str = "data/input/functions_definition.json"
 
     for i in range(len(sys.argv)):
 
         if sys.argv[i] == '--input' and i + 1 < len(sys.argv):
-            prompts = sys.argv[i + 1] 
+            prompts = sys.argv[i + 1]
         elif sys.argv[i] == '--output' and i + 1 < len(sys.argv):
-            output_path = sys.argv[i + 1] 
+            output_path = sys.argv[i + 1]
         elif sys.argv[i] == '--functions_definition' and i + 1 < len(sys.argv):
             funcs_path = sys.argv[i + 1]
 
     if len(sys.argv) > 7:
-        raise ValueError("[Error] wrong command format, dont add garbage to the command!")
+        raise ValueError(
+            "[Error] wrong command format, dont add garbage to the command!")
 
     if not os.path.exists(prompts):
         raise ValueError(f"[Error] The file '{prompts}' does not exist!")
@@ -230,10 +240,10 @@ def main():
     for prompt in prompts:
         prompt_text = prompt['prompt']
 
-        result.append(json_generator(model, prompt_text, allowed_funcs_names, funcs))
+        result.append(json_generator(model, prompt_text,
+                                     allowed_funcs_names, funcs))
 
-    
-    os.makedirs(output_path.parent, exist_ok= True)
+    os.makedirs(output_path.parent, exist_ok=True)
 
     with open(output_path, 'w') as f:
         json.dump(result, f, indent=4)

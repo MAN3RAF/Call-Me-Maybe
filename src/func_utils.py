@@ -1,49 +1,48 @@
-from typing import List, Dict, Any
-import json
+from typing import Dict, List
 import numpy as np
 
 
 def get_next_token(logits: List[float], allowed_ids: List[int]) -> int:
-	"""Forces the LLM to pick only from allowed_ids using -inf."""
-	
-	if not allowed_ids:
-		return logits.index(max(logits))
+    """Forces the LLM to pick only from allowed_ids using -inf."""
 
-	tokens = np.array(logits, dtype=float) + (-np.inf)
+    if not allowed_ids:
+        return logits.index(max(logits))
 
-	for token_id in allowed_ids:
-		tokens[token_id] = 0
+    tokens = np.array(logits, dtype=float) + (-np.inf)
 
-	constrained_logits = np.array(logits, dtype=float) + tokens
+    for token_id in allowed_ids:
+        tokens[token_id] = 0
 
-	return int(np.argmax(constrained_logits))
+    constrained_logits = np.array(logits, dtype=float) + tokens
+
+    return int(np.argmax(constrained_logits))
 
 
 def get_func_parameters(func_name: str, funcs_list: List[Dict]) -> Dict:
 
-	params: List = []
+    params: List = []
 
-	for i in range(len(funcs_list)):
+    for i in range(len(funcs_list)):
 
-		if funcs_list[i]["name"] == func_name:
+        if funcs_list[i]["name"] == func_name:
 
-			params = funcs_list[i]["parameters"]
+            params = funcs_list[i]["parameters"]
 
-	return params
+    return params
 
 
 def get_funcs_names(data: List) -> List[str]:
 
-	funcs_names = []
+    funcs_names = []
 
-	for d in data:
-		funcs_names.append(d['name'])
+    for d in data:
+        funcs_names.append(d['name'])
 
-	return funcs_names
+    return funcs_names
 
 
 def get_system_prompt(prompt: str, funcs: List) -> str:
-	"""Build a structured prompt with the user request and function defs.
+    """Build a structured prompt with the user request and function defs.
 
     Args:
         prompt: The original natural language prompt.
@@ -53,30 +52,27 @@ def get_system_prompt(prompt: str, funcs: List) -> str:
         A formatted prompt string suitable for the LLM.
     """
 
-	system_prompt = "You are a smart AI. You must choose the correct function from the list below based on the user's prompt.\n\n\n"
+    system_prompt = ("You are a smart AI. You must choose the correct function"
+                     " from the list below based on the user's prompt.\n\n\n")
 
-	system_prompt += f"User request: {prompt}\n"
+    system_prompt += f"User request: {prompt}\n"
 
-	system_prompt += f"\nAvailable functions:\n"
+    system_prompt += "\nAvailable functions:\n"
 
-	for func in funcs:
-        
-		func_name = func['name']
-		
-		func_desc = func['description']
+    for func in funcs:
+        func_name = func['name']
+        func_desc = func['description']
+        func_param = func['parameters']
 
-		func_param = func['parameters']
+        system_prompt += f"\n{func_name}\n"
 
-		system_prompt += f"\n{func_name}\n"
+        for param_name, param_details in func_param.items():
+            param_type = param_details['type']
+            system_prompt += f"({param_name}: {param_type})\n"
 
-		for param_name, param_details in func_param.items():
+        system_prompt += f"{func_desc}."
 
-			param_type = param_details['type']
+    system_prompt += ("\n\nRespond with a JSON object with keys 'name' and "
+                      "'parameters'.\n\n")
 
-			system_prompt += f"({param_name}: {param_type})\n"
-		
-		system_prompt += f"{func_desc}."
-
-	system_prompt += "\n\nRespond with a JSON object with keys 'name' and 'parameters'.\n\n"
-
-	return system_prompt
+    return system_prompt

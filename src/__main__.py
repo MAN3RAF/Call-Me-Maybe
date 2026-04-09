@@ -1,7 +1,6 @@
 from src.main import main
 
-
 try:
-	main()
+    main()
 except ValueError as e:
-	print(e)
+    print(e)
