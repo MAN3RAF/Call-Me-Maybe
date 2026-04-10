@@ -1,6 +1,6 @@
-from src.main import main
+from src.main import generate_json
 
 try:
-    main()
+    generate_json()
 except ValueError as e:
     print(e)

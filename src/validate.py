@@ -1,5 +1,5 @@
 from pydantic import BaseModel, ValidationError
-from typing import Dict, List
+from typing import Dict, List, Any
 import json
 
 
@@ -18,7 +18,7 @@ class PromptValidator(BaseModel):
     prompt: str
 
 
-def parse(location: str) -> List | None:
+def parse(location: str) -> Any:
     try:
         with open(location, "r", encoding='utf-8') as f:
             return json.load(f)
@@ -28,7 +28,7 @@ def parse(location: str) -> List | None:
         return None
 
 
-def func_validate(location: str) -> List:
+def func_validate(location: str) -> List[Any]:
     data = parse(location)
     if data is None:
         return []
@@ -44,7 +44,7 @@ def func_validate(location: str) -> List:
     return valid_funcs
 
 
-def prompt_validate(location: str) -> List:
+def prompt_validate(location: str) -> List[Any]:
     data = parse(location)
     if data is None:
         return []

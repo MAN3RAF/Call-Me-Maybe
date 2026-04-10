@@ -26,13 +26,13 @@ debug: $(VENV)
 
 
 lint: $(VENV)
-	flake8 .
-	mypy . --warn-return-any --warn-unused-ignores --ignore-missing-imports --disallow-untyped-defs --check-untyped-defs
+	uv run flake8 src
+	uv run mypy src --warn-return-any --warn-unused-ignores --ignore-missing-imports --disallow-untyped-defs --check-untyped-defs
 
 
 lint-strict: $(VENV)
-	flake8 .
-	mypy . --strict
+	uv run flake8 src
+	uv run mypy src --strict
 
 
 clean:
@@ -40,6 +40,7 @@ clean:
 	rm -rf $(VENV)
 	find . -type f -name "*.pyc" -delete
 	find . -type d -name "__pycache__" -delete
-
+	rm -rf .mypy_cache
+	rm -rf src/.mypy_cache
 
 .PHONY: install run debug clean lint lint-strict

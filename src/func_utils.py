@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Any
 import numpy as np
 
 
@@ -18,9 +18,10 @@ def get_next_token(logits: List[float], allowed_ids: List[int]) -> int:
     return int(np.argmax(constrained_logits))
 
 
-def get_func_parameters(func_name: str, funcs_list: List[Dict]) -> Dict:
+def get_func_parameters(func_name: str,
+                        funcs_list: List[Dict[str, Any]]) -> Dict[str, Any]:
 
-    params: List = []
+    params: Dict[str, Any] = {}
 
     for i in range(len(funcs_list)):
 
@@ -31,7 +32,7 @@ def get_func_parameters(func_name: str, funcs_list: List[Dict]) -> Dict:
     return params
 
 
-def get_funcs_names(data: List) -> List[str]:
+def get_funcs_names(data: List[Dict[str, Any]]) -> List[str]:
 
     funcs_names = []
 
@@ -41,7 +42,7 @@ def get_funcs_names(data: List) -> List[str]:
     return funcs_names
 
 
-def get_system_prompt(prompt: str, funcs: List) -> str:
+def get_system_prompt(prompt: str, funcs: List[Dict[str, Any]]) -> str:
     """Build a structured prompt with the user request and function defs.
 
     Args:
