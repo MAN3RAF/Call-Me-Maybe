@@ -20,6 +20,17 @@ def get_next_token(logits: List[float], allowed_ids: List[int]) -> int:
 
 def get_func_parameters(func_name: str,
                         funcs_list: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Retrieves the parameters of a specific function from a list of functions.
+
+    Args:
+        func_name: The name of the function to find.
+        funcs_list: A list of dictionaries, where each dictionary represents a
+                    function and contains its name and parameters.
+
+    Returns:
+        A dictionary containing the parameters of the specified function.
+        Returns an empty dictionary if the function is not found.
+    """
 
     params: Dict[str, Any] = {}
 
@@ -33,6 +44,15 @@ def get_func_parameters(func_name: str,
 
 
 def get_funcs_names(data: List[Dict[str, Any]]) -> List[str]:
+    """Extracts the names of all functions from a list of function definitions.
+
+    Args:
+        data: A list of dictionaries, where each dictionary represents a
+              function and contains a 'name' key.
+
+    Returns:
+        A list of strings, where each string is the name of a function.
+    """
 
     funcs_names = []
 

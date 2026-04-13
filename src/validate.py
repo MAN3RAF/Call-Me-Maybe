@@ -19,6 +19,15 @@ class PromptValidator(BaseModel):
 
 
 def parse(location: str) -> Any:
+    """
+    Parses a JSON file from the given location.
+
+    Args:
+        location: The path to the JSON file.
+
+    Returns:
+        The parsed JSON data as a Python object, or None if an error occurs.
+    """
     try:
         with open(location, "r", encoding='utf-8') as f:
             return json.load(f)
@@ -29,6 +38,18 @@ def parse(location: str) -> Any:
 
 
 def func_validate(location: str) -> List[Any]:
+    """
+    Validates a list of function definitions from a JSON file.
+
+    Each function is validated against the FunctionValidator model. Invalid
+    functions are skipped.
+
+    Args:
+        location: The path to the JSON file containing the function definitions.
+
+    Returns:
+        A list of valid function definitions as dictionaries.
+    """
     data = parse(location)
     if data is None:
         return []
@@ -45,6 +66,18 @@ def func_validate(location: str) -> List[Any]:
 
 
 def prompt_validate(location: str) -> List[Any]:
+    """
+    Validates a list of prompts from a JSON file.
+
+    Each prompt is validated against the PromptValidator model. Invalid
+    prompts are skipped.
+
+    Args:
+        location: The path to the JSON file containing the prompts.
+
+    Returns:
+        A list of valid prompts as dictionaries.
+    """
     data = parse(location)
     if data is None:
         return []

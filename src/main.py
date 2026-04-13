@@ -11,6 +11,23 @@ from src.validate import func_validate, prompt_validate
 
 
 def get_number_token_ids(model: Small_LLM_Model, type: str) -> List[int]:
+    """
+    Retrieves a list of token IDs corresponding to allowed characters for a
+    specific data type.
+
+    This function is used to constrain the language model's output to valid
+    characters for numbers (integer and float), booleans, and strings.
+
+    Args:
+        model: The language model instance, used to encode characters into
+               token IDs.
+        type: The data type for which to get the allowed token IDs.
+              Supported types are "integer", "number", "string", and "boolean".
+
+    Returns:
+        A list of integer token IDs. For "string", it returns an empty list
+        as any character is allowed within a string.
+    """
 
     token_ids: List[int] = []
 
@@ -42,6 +59,20 @@ def get_number_token_ids(model: Small_LLM_Model, type: str) -> List[int]:
 
 def get_number_value(model: Small_LLM_Model, ids: Any,
                      number_token_ids: List[int]) -> None:
+    """
+    Generates a numeric value (integer or float) token by token, constrained
+    by a set of allowed token IDs.
+
+    The generation stops when a comma or a closing brace is predicted,
+    indicating the end of the number.
+
+    Args:
+        model: The language model instance.
+        ids: A list of token IDs representing the input sequence so far.
+             This list is modified in-place.
+        number_token_ids: A list of token IDs that are allowed for
+                          numeric values.
+    """
 
     while True:
 
@@ -57,6 +88,19 @@ def get_number_value(model: Small_LLM_Model, ids: Any,
 
 def get_string_value(model: Small_LLM_Model, ids: Any,
                      number_token_ids: List[int]) -> None:
+    """
+    Generates a string value token by token.
+
+    The generation stops when a double quote is predicted, indicating the end
+    of the string.
+
+    Args:
+        model: The language model instance.
+        ids: A list of token IDs representing the input sequence so far.
+             This list is modified in-place.
+        number_token_ids: An unused parameter, present for consistency with
+                          other value generation functions.
+    """
 
     while True:
 
@@ -75,6 +119,15 @@ def get_string_value(model: Small_LLM_Model, ids: Any,
 def get_boolean_value(model: Small_LLM_Model,
                       ids: Any,
                       number_token_ids: List[int]) -> None:
+    """
+    Generates a boolean value ('true' or 'false') by predicting the next token.
+
+    Args:
+        model: The language model instance.
+        ids: A list of token IDs representing the input sequence so far.
+             This list is modified in-place.
+        number_token_ids: A list of token IDs allowed for boolean values.
+    """
 
     logits = model.get_logits_from_input_ids(ids)
     value_of_param_as_id = get_next_token(logits, number_token_ids)
@@ -84,6 +137,17 @@ def get_boolean_value(model: Small_LLM_Model,
 
 def build_json(model: Small_LLM_Model, ids: Any,
                params: Dict[str, Any]) -> None:
+    """
+    Constructs the parameters part of the JSON object by generating values for
+    each parameter based on its type.
+
+    Args:
+        model: The language model instance.
+        ids: A list of token IDs representing the input sequence so far.
+             This list is modified in-place.
+        params: A dictionary describing the parameters of the function,
+                including their names and types.
+    """
 
     last_key = list(params.keys())[-1]
 
@@ -112,6 +176,27 @@ def build_json(model: Small_LLM_Model, ids: Any,
 def json_generator(model: Small_LLM_Model, prompt: str,
                    allowed_functions_names: List[str],
                    funcs: List[Dict[str, Any]]) -> Any:
+    """
+    Generates a JSON object representing a function call based on a natural
+    language prompt.
+
+    This function orchestrates the process of:
+    1. Creating a system prompt.
+    2. Forcing the model to choose a function name from the allowed list.
+    3. Generating the parameters for the chosen function.
+    4. Assembling and returning the final JSON object.
+
+    Args:
+        model: The language model instance.
+        prompt: The natural language user prompt.
+        allowed_functions_names: A list of function names that the model is
+                                 allowed to choose from.
+        funcs: A list of dictionaries defining the available functions.
+
+    Returns:
+        A dictionary representing the generated JSON object, which includes the
+        original prompt, the chosen function name, and its parameters.
+    """
 
     allowed_paths = [model.encode(func).tolist()[0]
                      for func in allowed_functions_names]
@@ -204,6 +289,25 @@ def json_generator(model: Small_LLM_Model, prompt: str,
 
 
 def generate_json() -> None:
+    """
+    Main function to generate function call JSON objects from a file of prompts.
+
+    It reads prompts from an input file, generates a JSON for each, and writes
+    the results to an output file. File paths can be specified via command-line
+    arguments.
+
+    Command-line arguments:
+        --input: Path to the input JSON file containing prompts.
+                 Defaults to "data/input/function_calling_tests.json".
+        --output: Path to the output JSON file.
+                  Defaults to "data/output/function_calls.json".
+        --functions_definition: Path to the JSON file defining the functions.
+                                Defaults to "data/input/functions_definition.json".
+
+    Raises:
+        ValueError: If command-line arguments are incorrect, or if specified
+                    files do not exist or have the wrong format.
+    """
 
     prompts_path: str = "data/input/function_calling_tests.json"
     output_path_str: str = "data/output/function_calls.json"
