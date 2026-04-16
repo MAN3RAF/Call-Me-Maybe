@@ -45,7 +45,8 @@ def func_validate(location: str) -> List[Any]:
     functions are skipped.
 
     Args:
-        location: The path to the JSON file containing the function definitions.
+        location: The path to the JSON file
+        containing the function definitions.
 
     Returns:
         A list of valid function definitions as dictionaries.

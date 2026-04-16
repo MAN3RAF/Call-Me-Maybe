@@ -20,7 +20,8 @@ def get_next_token(logits: List[float], allowed_ids: List[int]) -> int:
 
 def get_func_parameters(func_name: str,
                         funcs_list: List[Dict[str, Any]]) -> Dict[str, Any]:
-    """Retrieves the parameters of a specific function from a list of functions.
+    """Retrieves the parameters of a specific function
+        from a list of functions.
 
     Args:
         func_name: The name of the function to find.

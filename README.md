@@ -27,7 +27,7 @@ You can run the project by executing the main module with optional command-line 
 uv run python -m src \
     --input data/input/function_calling_tests.json \
     --functions_definition data/input/functions_definition.json \
-    --output data/output/function_calls.json
+    --output data/output/function_calling_results.json
 
 # Or using the provided Makefile
 make run
@@ -61,7 +61,7 @@ The project employs constrained decoding at the token level (logit masking). Dur
 
 ## Testing strategy
 
-Validation is performed by feeding the system a suite of prompts (`function_calling_tests.json`) alongside diverse schema definitions (`functions_definition.json`). The final generated outputs (`function_calls.json`) are evaluated to confirm that:
+Validation is performed by feeding the system a suite of prompts (`function_calling_tests.json`) alongside diverse schema definitions (`functions_definition.json`). The final generated outputs (`function_calling_results.json`) are evaluated to confirm that:
 
 1. They parse successfully as JSON.
 2. They map to the correct function name.

@@ -9,7 +9,7 @@ from src.func_utils import (get_func_parameters, get_next_token,
                             get_system_prompt, get_funcs_names)
 from src.validate import func_validate, prompt_validate
 
-
+path
 def get_number_token_ids(model: Small_LLM_Model, type: str) -> List[int]:
     """
     Retrieves a list of token IDs corresponding to allowed characters for a
@@ -290,11 +290,12 @@ def json_generator(model: Small_LLM_Model, prompt: str,
 
 def generate_json() -> None:
     """
-    Main function to generate function call JSON objects from a file of prompts.
+    Main function to generate function call JSON objects
+    from a file of prompts.
 
     It reads prompts from an input file, generates a JSON for each, and writes
-    the results to an output file. File paths can be specified via command-line
-    arguments.
+    the results to an output file. File paths can be specified
+    via command-line arguments.
 
     Command-line arguments:
         --input: Path to the input JSON file containing prompts.
@@ -302,7 +303,7 @@ def generate_json() -> None:
         --output: Path to the output JSON file.
                   Defaults to "data/output/function_calls.json".
         --functions_definition: Path to the JSON file defining the functions.
-                                Defaults to "data/input/functions_definition.json".
+                            Defaults to "data/input/functions_definition.json".
 
     Raises:
         ValueError: If command-line arguments are incorrect, or if specified
@@ -310,7 +311,7 @@ def generate_json() -> None:
     """
 
     prompts_path: str = "data/input/function_calling_tests.json"
-    output_path_str: str = "data/output/function_calls.json"
+    output_path_str: str = "data/output/function_calling_results.json"
     funcs_path: str = "data/input/functions_definition.json"
 
     for i in range(len(sys.argv)):
@@ -337,6 +338,13 @@ def generate_json() -> None:
     prompts: List[Dict[str, Any]] = prompt_validate(prompts_path)
 
     funcs: List[Dict[str, Any]] = func_validate(funcs_path)
+
+    if not funcs:
+        raise ValueError("[Error] No valid functions found or invalid file.")
+
+    if not prompts:
+        print("[Warning] No valid prompts found or invalid file.",
+              file=sys.stderr)
 
     model = Small_LLM_Model()
 

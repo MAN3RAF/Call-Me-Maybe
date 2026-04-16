@@ -4,7 +4,7 @@ PYTHON = $(VENV)/bin/python3
 
 SRC = src
 
-PARAMETERS = --functions_definition data/input/functions_definition.json --input data/input/function_calling_tests.json --output data/input/functions_definition.json
+PARAMETERS = --functions_definition data/input/functions_definition.json --input data/input/function_calling_tests.json --output data/output/function_calling_results.json
 
 
 install:
