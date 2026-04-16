@@ -9,7 +9,7 @@ from src.func_utils import (get_func_parameters, get_next_token,
                             get_system_prompt, get_funcs_names)
 from src.validate import func_validate, prompt_validate
 
-path
+
 def get_number_token_ids(model: Small_LLM_Model, type: str) -> List[int]:
     """
     Retrieves a list of token IDs corresponding to allowed characters for a
