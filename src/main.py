@@ -103,13 +103,28 @@ def get_string_value(model: Small_LLM_Model, ids: Any,
     """
 
     while True:
-
         logits = model.get_logits_from_input_ids(ids)
         value_of_param_as_id = get_next_token(logits, number_token_ids)
 
         token_text = model.decode([value_of_param_as_id])
 
         if '"' in token_text:
+            before_quote = ""
+
+            # Handle escaped quotes (e.g., \")
+            # If it's just an escaped quote inside the string, keep going
+            if token_text.endswith('\\"') or '\\"' in token_text:
+                ids.append(value_of_param_as_id)
+                continue
+                
+            # If it's a real closing quote, keep everything BEFORE the quote
+            before_quote = token_text.split('"')[0]
+            
+            if before_quote:
+                # Append the characters that came before the quote in this token
+                ids += model.encode(before_quote).tolist()[0]
+                
+            # Close the JSON string properly
             ids += model.encode('"').tolist()[0]
             break
 
@@ -265,27 +280,40 @@ def json_generator(model: Small_LLM_Model, prompt: str,
 
     final_text = model.decode(ids)
 
-    final_text = '{"prompt":' + final_text.split('{"prompt":')[1]
+    # Split the text so we only clean the generated parameters, NOT the prompt
+    split_marker = '"parameters": '
+    if split_marker in final_text:
+        prefix, params_text = final_text.split(split_marker, 1)
+        
+        # Clean ONLY the parameters part. 
+        # Negative lookbehind (?<!\\) ensures we don't double-escape already escaped backslashes
+        # Negative lookahead (?![...]) ensures we don't break valid JSON escapes
+        params_text = re.sub(r'(?<!\\)\\(?!["\\/bfnrt]|u[0-9a-fA-F]{4})', r'\\\\', params_text)
+        
+        clean_text = prefix + split_marker + params_text
+    else:
+        clean_text = final_text
 
-    clean_text = re.sub(r'\\([^"\\/bfnrtu])', r'\\\\\1', final_text)
+    # Extract just the JSON object from the decoded output
+    clean_text = '{"prompt":' + clean_text.split('{"prompt":')[1]
 
-    final_text = json.loads(clean_text)
+    final_dict = json.loads(clean_text)
 
     for param_name, param_info in params.items():
 
         if param_info['type'] == 'number':
-            final_text['parameters'][param_name] = float(
-                final_text['parameters'][param_name]
+            final_dict['parameters'][param_name] = float(
+                final_dict['parameters'][param_name]
                 )
 
         elif param_info['type'] == 'integer':
-            final_text['parameters'][param_name] = int(
-                final_text['parameters'][param_name]
+            final_dict['parameters'][param_name] = int(
+                final_dict['parameters'][param_name]
                 )
 
-    print(final_text)
+    print(final_dict)
 
-    return final_text
+    return final_dict
 
 
 def generate_json() -> None:
