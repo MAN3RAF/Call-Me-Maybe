@@ -1,5 +1,5 @@
 from llm_sdk.llm_sdk import Small_LLM_Model
-from encode_decode import encode, decode
+from .encode_decode import decode, encode
 import sys
 import os
 import re
@@ -37,14 +37,14 @@ def get_number_token_ids(model: Small_LLM_Model, type: str) -> List[int]:
         allowed = [",", "}", "-", "0", "1", "2", "3", "4",
                    "5", "6", "7", "8", "9"]
 
-        token_ids = [model.encode(a).tolist()[0][0] for a in allowed]
+        token_ids = [encode(model, a) for a in allowed]
 
     if type == "number":
 
         allowed = [",", "}", "-", ".", "0", "1", "2", "3", "4",
                    "5", "6", "7", "8", "9"]
 
-        token_ids = [model.encode(a).tolist()[0][0] for a in allowed]
+        token_ids = [encode(model, a) for a in allowed]
 
     if type == "string":
         return []
@@ -53,7 +53,7 @@ def get_number_token_ids(model: Small_LLM_Model, type: str) -> List[int]:
 
         allowed = ['true', 'false']
 
-        token_ids = [model.encode(a).tolist()[0][0] for a in allowed]
+        token_ids = [encode(model, a) for a in allowed]
 
     return token_ids
 
@@ -80,8 +80,8 @@ def get_number_value(model: Small_LLM_Model, ids: Any,
         logits = model.get_logits_from_input_ids(ids)
         value_of_param_as_id = get_next_token(logits, number_token_ids)
 
-        if (model.decode([value_of_param_as_id]) == "," or
-                model.decode([value_of_param_as_id]) == "}"):
+        if (decode(model, [value_of_param_as_id]) == "," or
+                decode(model, [value_of_param_as_id]) == "}"):
             break
 
         ids.append(value_of_param_as_id)
@@ -108,10 +108,10 @@ def get_string_value(model: Small_LLM_Model, ids: Any,
         logits = model.get_logits_from_input_ids(ids)
         value_of_param_as_id = get_next_token(logits, number_token_ids)
 
-        token_text = model.decode([value_of_param_as_id])
+        token_text = decode(model, [value_of_param_as_id])
 
         if '"' in token_text:
-            ids += model.encode('"').tolist()[0]
+            ids += encode(model, '"')
             break
 
         ids.append(value_of_param_as_id)
@@ -157,21 +157,21 @@ def build_json(model: Small_LLM_Model, ids: Any,
         number_token_ids = get_number_token_ids(model, param_info['type'])
 
         if param_info['type'] == 'number' or param_info['type'] == 'integer':
-            ids += model.encode(f'"{param_name}": ').tolist()[0]
+            ids += encode(model, f'"{param_name}": ')
             get_number_value(model, ids, number_token_ids)
 
         elif param_info['type'] == "string":
-            ids += model.encode(f'"{param_name}": "').tolist()[0]
+            ids += encode(model, f'"{param_name}": "')
             get_string_value(model, ids, number_token_ids)
 
         elif param_info['type'] == "boolean":
-            ids += model.encode(f'"{param_name}": ').tolist()[0]
+            ids += encode(model, f'"{param_name}": ')
             get_boolean_value(model, ids, number_token_ids)
 
         if param_name != last_key:
-            ids += model.encode(", ").tolist()[0]
+            ids += encode(model, ", ")
 
-    ids += model.encode("}").tolist()[0]
+    ids += encode(model, "}")
 
 
 def json_generator(model: Small_LLM_Model, prompt: str,
@@ -199,8 +199,7 @@ def json_generator(model: Small_LLM_Model, prompt: str,
         original prompt, the chosen function name, and its parameters.
     """
 
-    allowed_paths = [model.encode(func).tolist()[0]
-                     for func in allowed_functions_names]
+    allowed_paths = [encode(model, func) for func in allowed_functions_names]
 
     # Pre-compute all token IDs that represent numbers (for parameters)
 
@@ -215,13 +214,13 @@ def json_generator(model: Small_LLM_Model, prompt: str,
 
     json_start = sys_prompt + "\n\n" + json_start
 
-    ids = model.encode(json_start).tolist()[0]
+    ids = encode(model, json_start)
 
     # 2. "LLM DOES": Choose the function name dynamically:
 
     generated_func_ids: List[int] = []
 
-    print("\n== generating function's name ==")
+    # print("\n== generating function's name ==")
 
     while True:
         logits = model.get_logits_from_input_ids(ids)
@@ -248,16 +247,16 @@ def json_generator(model: Small_LLM_Model, prompt: str,
         if generated_func_ids in allowed_paths:
             break
 
-    print(f"-->[{model.decode(generated_func_ids)}]")
+    # print(f"-->[{decode(model, generated_func_ids)}]")
 
     # 3. "WE DO": Force the transition to parameters:
 
-    print("\n== Generating Parameters ==")
+    # print("\n== Generating Parameters ==")
 
-    params = get_func_parameters(model.decode(generated_func_ids), funcs)
+    params = get_func_parameters(decode(model, generated_func_ids), funcs)
 
     param_transition = '", "parameters": {'
-    ids += model.encode(param_transition).tolist()[0]
+    ids += encode(model, param_transition)
 
     # 4. "LLM DOES": Pick the number for parameter "a":
 
@@ -266,11 +265,11 @@ def json_generator(model: Small_LLM_Model, prompt: str,
     # 5. "WE DO": Close the JSON properly:
 
     json_end = '}'
-    ids += model.encode(json_end).tolist()[0]
+    ids += encode(model, json_end)
 
     # --- FINAL OUTPUT ---
 
-    final_text = model.decode(ids)
+    final_text = decode(model, ids)
 
     final_text = '{"prompt":' + final_text.split('{"prompt":')[1]
 
@@ -289,9 +288,9 @@ def json_generator(model: Small_LLM_Model, prompt: str,
             final_text['parameters'][param_name] = int(
                 final_text['parameters'][param_name]
                 )
-        print(f"-->[{param_name}: {final_text['parameters'][param_name]}]")
+        # print(f"-->[{param_name}: {final_text['parameters'][param_name]}]")
 
-    print("\n== JSON Output ==")
+    # print("\n== JSON Output ==")
     print(final_text)
 
     return final_text
@@ -323,7 +322,7 @@ def generate_json() -> None:
     output_path_str: str = "data/output/function_calling_results.json"
     funcs_path: str = "data/input/functions_definition.json"
 
-    print("=== Parsing the Input ===")
+    # print("=== Parsing the Input ===")
 
     for i in range(len(sys.argv)):
 
@@ -351,11 +350,10 @@ def generate_json() -> None:
     funcs: List[Dict[str, Any]] = func_validate(funcs_path)
 
     if not funcs:
-        raise ValueError("[Error] No valid functions found or invalid file.")
+        raise ValueError("[Error]: invalid functions found or invalid file!")
 
     if not prompts:
-        print("[Warning] No valid prompts found or invalid file.",
-              file=sys.stderr)
+        print("[Error]: invalid prompts found or invalid file!")
 
     model = Small_LLM_Model()
 
@@ -365,9 +363,9 @@ def generate_json() -> None:
 
     output_path = Path(output_path_str)
 
-    print('-->[Input Clear!]')
+    # print('-->[Input Clear!]')
 
-    print("\n=== Starting the JSON generation ===")
+    # print("\n=== Starting the JSON generation ===")
 
     for prompt in prompts:
         prompt_text: str = prompt['prompt']
@@ -375,8 +373,8 @@ def generate_json() -> None:
         result.append(json_generator(model, prompt_text,
                                      allowed_funcs_names, funcs))
 
-    print("\n=== Ending generation ===")
-    print("-->[Outputing everything in a JSON file]")
+    # print("\n=== Ending generation ===")
+    # print("-->[Outputing everything in a JSON file]")
 
     os.makedirs(output_path.parent, exist_ok=True)
 

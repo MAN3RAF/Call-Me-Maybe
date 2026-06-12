@@ -62,7 +62,7 @@ def func_validate(location: str) -> List[Any]:
             f_v = FunctionValidator(**f)
             valid_funcs.append(f_v.model_dump())
         except (ValidationError, TypeError):
-            print("ERROR: Skipping invalid function entry.")
+            return []
     return valid_funcs
 
 
@@ -89,5 +89,5 @@ def prompt_validate(location: str) -> List[Any]:
             p_v = PromptValidator(**p)
             valid_prompts.append(p_v.model_dump())
         except (ValidationError, TypeError):
-            print("ERROR: Skipping invalid prompt entry.")
+            return []
     return valid_prompts
