@@ -273,9 +273,7 @@ def json_generator(model: Small_LLM_Model, prompt: str,
 
     final_text = '{"prompt":' + final_text.split('{"prompt":')[1]
 
-    clean_text = re.sub(r'\\([^"\\/bfnrtu])', r'\\\\\1', final_text)
-
-    final_text = json.loads(clean_text)
+    final_text = json.loads(final_text)
 
     for param_name, param_info in params.items():
 
@@ -288,6 +286,11 @@ def json_generator(model: Small_LLM_Model, prompt: str,
             final_text['parameters'][param_name] = int(
                 final_text['parameters'][param_name]
                 )
+        elif param_info['type'] == 'string':
+            final_text['parameters'][param_name] = (
+                final_text['parameters'][param_name].lstrip()
+            )
+
         # print(f"-->[{param_name}: {final_text['parameters'][param_name]}]")
 
     # print("\n== JSON Output ==")
