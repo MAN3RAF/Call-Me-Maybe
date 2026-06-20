@@ -2,7 +2,6 @@ from llm_sdk.llm_sdk import Small_LLM_Model
 from .encode_decode import decode, encode
 import sys
 import os
-import re
 from pathlib import Path
 from typing import List, Dict, Any
 import json
@@ -30,21 +29,21 @@ def get_number_token_ids(model: Small_LLM_Model, type: str) -> List[int]:
         as any character is allowed within a string.
     """
 
-    token_ids: List[int] = []
+    # token_ids: List[int] = []
 
     if type == "integer":
 
         allowed = [",", "}", "-", "0", "1", "2", "3", "4",
                    "5", "6", "7", "8", "9"]
 
-        token_ids = [encode(model, a) for a in allowed]
+        token_ids = [encode(model, a) for a in allowed][0]
 
     if type == "number":
 
         allowed = [",", "}", "-", ".", "0", "1", "2", "3", "4",
                    "5", "6", "7", "8", "9"]
 
-        token_ids = [encode(model, a) for a in allowed]
+        token_ids = [encode(model, a) for a in allowed][0]
 
     if type == "string":
         return []
@@ -53,7 +52,7 @@ def get_number_token_ids(model: Small_LLM_Model, type: str) -> List[int]:
 
         allowed = ['true', 'false']
 
-        token_ids = [encode(model, a) for a in allowed]
+        token_ids = [encode(model, a) for a in allowed][0]
 
     return token_ids
 

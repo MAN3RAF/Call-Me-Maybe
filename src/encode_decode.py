@@ -2,6 +2,7 @@ from typing import List
 import json
 from llm_sdk.llm_sdk import Small_LLM_Model
 
+
 def encode(model: Small_LLM_Model, text: str) -> List[int]:
     """Encodes text using a longest-match algorithm."""
     vocab_path = model.get_path_to_vocab_file()
@@ -27,6 +28,7 @@ def encode(model: Small_LLM_Model, text: str) -> List[int]:
             j += 1
 
     return res
+
 
 def decode(model: Small_LLM_Model, ids: List[int]) -> str:
     """Decodes token IDs back to a string."""
