@@ -36,14 +36,14 @@ def get_number_token_ids(model: Small_LLM_Model, type: str) -> List[int]:
         allowed = [",", "}", "-", "0", "1", "2", "3", "4",
                    "5", "6", "7", "8", "9"]
 
-        token_ids = [encode(model, a) for a in allowed][0]
+        token_ids = [encode(model, a) for a in allowed]
 
     if type == "number":
 
         allowed = [",", "}", "-", ".", "0", "1", "2", "3", "4",
                    "5", "6", "7", "8", "9"]
 
-        token_ids = [encode(model, a) for a in allowed][0]
+        token_ids = [encode(model, a) for a in allowed]
 
     if type == "string":
         return []
@@ -52,9 +52,11 @@ def get_number_token_ids(model: Small_LLM_Model, type: str) -> List[int]:
 
         allowed = ['true', 'false']
 
-        token_ids = [encode(model, a) for a in allowed][0]
+        token_ids = [encode(model, a) for a in allowed]
 
-    return token_ids
+    res = [item for sublist in token_ids for item in sublist]
+
+    return res
 
 
 def get_number_value(model: Small_LLM_Model, ids: Any,
